@@ -578,9 +578,7 @@ public final class CarbonUILoginUtil {
                 || isFileDownload
                 || requestedURI.endsWith("/fileupload")
                 || requestedURI.indexOf("/fileupload/") > -1
-                || requestedURI.indexOf("login_action.jsp") > -1
-                || isTryIt
-                || requestedURI.indexOf("tryit/JAXRSRequestXSSproxy_ajaxprocessor.jsp") > -1)
+                || requestedURI.indexOf("login_action.jsp") > -1)
                 && !requestedURI.contains(";")) {
 
             if ((requestedURI.indexOf("login.jsp") > -1
@@ -602,7 +600,7 @@ public final class CarbonUILoginUtil {
                 // redirect relative to the servlet container root
                 response.sendRedirect(context + "/carbon/admin/index.jsp");
                 return RETURN_FALSE;
-            } else if ((isTryIt || isFileDownload) && !authenticated) {
+            } else if (isFileDownload && !authenticated) {
                 if (isFileDownload) {
                     response.sendRedirect(context + "/carbon/admin/index.jsp");
                 }
