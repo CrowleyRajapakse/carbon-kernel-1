@@ -47,12 +47,13 @@ public class CompositeValve extends ValveBase {
                 enableSaaSParam = request.getContext().findParameter(ENABLE_SAAS);
                 realm = request.getContext().getRealm();
             } else {
-                log.error("Could not handle the request: " + request.getRequestURI() +
-                        ", since the request context is null. This could be due to multiple reasons, " +
-                        "such as maxHttpHeaderSize limitation, or the request having no context.");
+                if (log.isDebugEnabled()) {
+                    log.debug("Could not handle the request: " + request.getRequestURI() +
+                            ", since the request context is null. This could be due to the maxHttpHeaderSize limitation, " +
+                            "or the request having no context.");
+                }
                 return;
             }
-
             // deprecation notice since Carbon 4.4. Users should configure SaaS mode by adding the CarbonTomcatRealm to the
             // META-INF/context.xml. See javadocs at @org.wso2.carbon.tomcat.ext.realms.CarbonTomcatRealm.
             // Remove this check in a future release.
@@ -63,9 +64,7 @@ public class CompositeValve extends ValveBase {
                     log.warn("To enable SaaS mode for the webapp, " + contextName +
                              ", configure the CarbonTomcatRealm in META-INF/context.xml.");
                 }
-
             }
-
             TomcatValveContainer.invokeValves(request, response, this);
             // ------------ Absolutely no code below this line -----------------------
             // --------- Valve chaining happens from here onwards --------------------
