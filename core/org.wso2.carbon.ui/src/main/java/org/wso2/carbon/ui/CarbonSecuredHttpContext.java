@@ -153,12 +153,6 @@ public class CarbonSecuredHttpContext extends SecuredComponentEntryHttpContext {
                 return false;
             }
         }
-        // We are allowing requests for  .jar/.class resources. Otherwise applets won't get loaded
-        // due to session checks. (applet loading happens over https://)
-        if(requestedURI.endsWith(".jar") || requestedURI.endsWith(".class")) {
-           log.debug("Skipping authentication for .jar files and .class file." + requestedURI);
-           return true;
-        }
 
         String resourceURI = CarbonUILoginUtil.addNewContext(requestedURI).replaceFirst(context + "/carbon/",
                 contextURIBuilder(context + "/carbon"));
