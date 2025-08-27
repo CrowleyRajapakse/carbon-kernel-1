@@ -16,8 +16,8 @@
 
 package org.wso2.carbon.server.admin.module.handler;
 
+import java.util.List;
 import org.apache.axis2.AxisFault;
-import org.apache.axis2.Constants;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.AxisOperation;
 import org.apache.axis2.description.AxisService;
@@ -119,6 +119,11 @@ public class AuthorizationHandler extends AbstractHandler {
                                         ServerConstants.AUTHORIZATION_FAULT_CODE);
                 }
 
+                List<String> resourcePermissionsFromConfiguration =
+                        AuthenticationUtil.getAuthorizationPermissionsFromConfigLevel(serviceName, opName);
+                if (resourcePermissionsFromConfiguration != null) {
+                    resourceId = String.join(",", resourcePermissionsFromConfiguration);
+                }
                 resourceId = resourceId.trim();
                 AuthorizationManager authMan = realm.getAuthorizationManager();
                 if (!isAuthorized(authMan, username, resourceId, action)) {
@@ -163,11 +168,15 @@ public class AuthorizationHandler extends AbstractHandler {
     
     
     private boolean skipAuthentication(MessageContext msgContext) {
-        boolean skipAuth  = false;
+        boolean skipAuth = false;
         AxisOperation operation = msgContext.getAxisOperation();
         Parameter param = operation.getParameter("DoAuthentication");
         if (param != null && "false".equals(param.getValue())) {
-        	skipAuth = true;
+            skipAuth = true;
+        }
+        Boolean authenticationEnabledFromConfigurationLevel = AuthenticationUtil.isAuthenticationEnabledFromConfigurationLevel(msgContext);
+        if (authenticationEnabledFromConfigurationLevel != null) {
+            skipAuth = !authenticationEnabledFromConfigurationLevel;
         }
         return skipAuth;
     }

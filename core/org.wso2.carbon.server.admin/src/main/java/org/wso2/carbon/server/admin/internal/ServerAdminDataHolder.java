@@ -15,9 +15,12 @@
  */
 package org.wso2.carbon.server.admin.internal;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.axis2.context.ConfigurationContext;
 import org.wso2.carbon.base.api.ServerConfigurationService;
 import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.server.admin.model.ServiceAuthentication;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -32,11 +35,13 @@ public class ServerAdminDataHolder {
     private RegistryService registryService;
     private RealmService realmService;
     private ConfigurationContext configContext;
+    private Map<String, ServiceAuthentication> serviceAuthenticationMap = new HashMap<>();
 
     /**
      * The classloader which should be set in the TCCL before restarting the server
      */
     public ClassLoader restartThreadContextClassloader;
+    private boolean globalServiceAccessControlEnabled;
 
     public static ServerAdminDataHolder getInstance() {
         return instance;
@@ -99,5 +104,22 @@ public class ServerAdminDataHolder {
 
     public void setRestartThreadContextClassloader(ClassLoader restartThreadContextClassloader) {
         this.restartThreadContextClassloader = restartThreadContextClassloader;
+    }
+
+    public Map<String, ServiceAuthentication> getServiceAuthenticationMap() {
+        return serviceAuthenticationMap;
+    }
+
+    public void setServiceAuthenticationMap(
+            Map<String, ServiceAuthentication> serviceAuthenticationMap) {
+        this.serviceAuthenticationMap = serviceAuthenticationMap;
+    }
+
+    public void setGlobalServiceAccessControlEnabled(boolean globalServiceAccessControlEnabled) {
+        this.globalServiceAccessControlEnabled = globalServiceAccessControlEnabled;
+    }
+
+    public boolean isGlobalServiceAccessControlEnabled() {
+        return globalServiceAccessControlEnabled;
     }
 }
