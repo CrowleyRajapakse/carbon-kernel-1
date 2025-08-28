@@ -1,17 +1,17 @@
-/*
- * Copyright (c) 2025 WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
- *
+/**
+ * Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com).
+ * <p>
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -29,19 +29,18 @@ import org.wso2.carbon.server.admin.model.ServiceAuthentication;
 /**
  * Utility class for authentication and authorization related operations
  */
-public class AuthenticationUtil {
-    private AuthenticationUtil() {
+public class AccessControlUtil {
+    private AccessControlUtil() {
     }
 
     /**
      * Check whether authentication is enabled for the service from the configuration level
      *
-     * @param messageContext The message context of the request
+     * @param serviceName service name of the operation
      * @return true if authentication is enabled, false if disabled and null if not configured
      */
-    public static Boolean isAuthenticationEnabledFromConfigurationLevel(MessageContext messageContext) {
-        if (ServerAdminDataHolder.getInstance().isGlobalServiceAccessControlEnabled()) {
-            String serviceName = getServiceName(messageContext);
+    public static Boolean isAuthenticationEnabledFromConfigurationLevel(String serviceName) {
+        if (ServerAdminDataHolder.getInstance().isServiceAccessControlEnabled()) {
             ServiceAuthentication serviceAuth =
                     ServerAdminDataHolder.getInstance().getServiceAuthenticationMap().get(serviceName);
             if (serviceAuth != null) {
@@ -70,7 +69,7 @@ public class AuthenticationUtil {
      * @return List of permissions configured for the operation, null if not configured
      */
     public static List<String> getAuthorizationPermissionsFromConfigLevel(String serviceName, String operationName) {
-        if (ServerAdminDataHolder.getInstance().isGlobalServiceAccessControlEnabled()) {
+        if (ServerAdminDataHolder.getInstance().isServiceAccessControlEnabled()) {
             ServiceAuthentication serviceAuth =
                     ServerAdminDataHolder.getInstance().getServiceAuthenticationMap().get(serviceName);
             if (serviceAuth != null) {

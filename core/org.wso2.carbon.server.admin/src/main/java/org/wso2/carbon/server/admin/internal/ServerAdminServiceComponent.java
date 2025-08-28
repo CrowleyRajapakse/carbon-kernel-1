@@ -131,18 +131,18 @@ public class ServerAdminServiceComponent {
     }
 
     private void registerMBeans(ServerConfigurationService serverConfig) {
-        if (registeredMBeans) {
-            return;
-        }
-        MBeanRegistrar.registerMBean(new ServerAdmin());
-        registeredMBeans = true;
+            if (registeredMBeans) {
+                return;
+            }
+            MBeanRegistrar.registerMBean(new ServerAdmin());
+            registeredMBeans = true;
     }
 
     private void setRegistryDriver(RegistryService registry) {
         try {
             if (registry.getConfigSystemRegistry().getRegistryContext() != null &&
-                    registry.getConfigSystemRegistry().getRegistryContext().getDataAccessManager()
-                            != null) {
+                registry.getConfigSystemRegistry().getRegistryContext().getDataAccessManager()
+                        != null) {
                 DataAccessManager dataAccessManager =
                         registry.getConfigSystemRegistry().getRegistryContext()
                                 .getDataAccessManager();
@@ -152,7 +152,7 @@ public class ServerAdminServiceComponent {
                 }
                 Connection dbConnection = null;
                 try {
-                    DataSource dataSource = ((JDBCDataAccessManager) dataAccessManager).getDataSource();
+                    DataSource dataSource = ((JDBCDataAccessManager)dataAccessManager).getDataSource();
                     dbConnection = dataSource.getConnection();
                     dataHolder.setRegistryDBDriver(dbConnection.getMetaData().getDriverName());
                 } finally {
@@ -167,8 +167,7 @@ public class ServerAdminServiceComponent {
         }
     }
 
-    @Reference(name = "registry.service", cardinality = ReferenceCardinality.MANDATORY, policy =
-            ReferencePolicy.DYNAMIC,
+    @Reference(name = "registry.service", cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC,
             unbind = "unsetRegistryService")
     protected void setRegistryService(RegistryService registryService) {
         dataHolder.setRegistryService(registryService);
@@ -179,8 +178,7 @@ public class ServerAdminServiceComponent {
         dataHolder.setRegistryDBDriver(null);
     }
 
-    @Reference(name = "user.realmservice.default", cardinality = ReferenceCardinality.MANDATORY, policy =
-            ReferencePolicy.DYNAMIC,
+    @Reference(name = "user.realmservice.default", cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC,
             unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
         dataHolder.setRealmService(realmService);
@@ -191,8 +189,7 @@ public class ServerAdminServiceComponent {
         dataHolder.setUserManagerDBDriver(null);
     }
 
-    @Reference(name = "config.context.service", cardinality = ReferenceCardinality.MANDATORY, policy =
-            ReferencePolicy.DYNAMIC,
+    @Reference(name = "config.context.service", cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC,
             unbind = "unsetConfigurationContextService")
     protected void setConfigurationContextService(ConfigurationContextService contextService) {
         this.configContext = contextService.getServerConfigContext();
@@ -215,8 +212,7 @@ public class ServerAdminServiceComponent {
         dataHolder.setConfigContext(null);
     }
 
-    @Reference(name = "server.configuration", cardinality = ReferenceCardinality.MANDATORY, policy =
-            ReferencePolicy.DYNAMIC,
+    @Reference(name = "server.configuration", cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC,
             unbind = "unsetServerConfigurationService")
     protected void setServerConfigurationService(ServerConfigurationService serverConfiguration) {
         dataHolder.setServerConfig(serverConfiguration);
@@ -234,11 +230,11 @@ public class ServerAdminServiceComponent {
                 if (documentElement != null) {
                     OMElement enabled = documentElement.getFirstChildWithName(new QName("Enabled"));
                     if (enabled == null || !Boolean.parseBoolean(enabled.getText())) {
-                        ServerAdminDataHolder.getInstance().setGlobalServiceAccessControlEnabled(false);
+                        ServerAdminDataHolder.getInstance().setServiceAccessControlEnabled(false);
                         // If service authentication is disabled, no need to read further configurations
                         return;
                     }
-                    ServerAdminDataHolder.getInstance().setGlobalServiceAccessControlEnabled(true);
+                    ServerAdminDataHolder.getInstance().setServiceAccessControlEnabled(true);
                     Map<String, ServiceAuthentication> serviceAuthenticationMap = new HashMap<>();
                     OMElement servicesElement = documentElement.getFirstChildWithName(new QName("Services"));
                     if (servicesElement != null) {

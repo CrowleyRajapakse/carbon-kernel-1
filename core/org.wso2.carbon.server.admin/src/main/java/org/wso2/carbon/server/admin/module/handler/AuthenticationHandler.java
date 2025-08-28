@@ -173,7 +173,7 @@ public class AuthenticationHandler extends AbstractHandler {
                 } catch (AuthenticationFailureException e) {
                     SimpleDateFormat date = new SimpleDateFormat("'['yyyy-MM-dd HH:mm:ss,SSSS']'");
                     invalidateSession(msgContext);
-                    String serviceName = AuthenticationUtil.getServiceName(msgContext);
+                    String serviceName = AccessControlUtil.getServiceName(msgContext);
                     String msg = "Illegal access attempt at " + date.format(new Date()) + " from IP address "
                             + remoteIP + " while trying to authenticate access to service " + serviceName;
                     log.warn(msg);
@@ -195,7 +195,7 @@ public class AuthenticationHandler extends AbstractHandler {
                 invalidateSession(msgContext);
 
                 if (AbstractAuthenticator.continueProcessing(msgContext)) {
-                    String serviceName = AuthenticationUtil.getServiceName(msgContext);
+                    String serviceName = AccessControlUtil.getServiceName(msgContext);
                     String msg = "Illegal access attempt at " + date.format(new Date()) + " from IP address "
                                + remoteIP + " : Service is " + serviceName;
                     log.warn(msg);
@@ -247,8 +247,9 @@ public class AuthenticationHandler extends AbstractHandler {
         if (param != null && "false".equals(param.getValue())) {
         	skipAuth = true;
         }
+        String serviceName = AccessControlUtil.getServiceName(msgContext);
         Boolean authenticationEnabledFromConfigurationLevel =
-                AuthenticationUtil.isAuthenticationEnabledFromConfigurationLevel(msgContext);
+                AccessControlUtil.isAuthenticationEnabledFromConfigurationLevel(serviceName);
         if (authenticationEnabledFromConfigurationLevel != null) {
             skipAuth = !authenticationEnabledFromConfigurationLevel;
         }

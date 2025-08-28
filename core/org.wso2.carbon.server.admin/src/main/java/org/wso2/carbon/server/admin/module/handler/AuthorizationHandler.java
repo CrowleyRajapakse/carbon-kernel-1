@@ -120,7 +120,7 @@ public class AuthorizationHandler extends AbstractHandler {
                 }
 
                 List<String> resourcePermissionsFromConfiguration =
-                        AuthenticationUtil.getAuthorizationPermissionsFromConfigLevel(serviceName, opName);
+                        AccessControlUtil.getAuthorizationPermissionsFromConfigLevel(serviceName, opName);
                 if (resourcePermissionsFromConfiguration != null) {
                     resourceId = String.join(",", resourcePermissionsFromConfiguration);
                 }
@@ -174,7 +174,10 @@ public class AuthorizationHandler extends AbstractHandler {
         if (param != null && "false".equals(param.getValue())) {
             skipAuth = true;
         }
-        Boolean authenticationEnabledFromConfigurationLevel = AuthenticationUtil.isAuthenticationEnabledFromConfigurationLevel(msgContext);
+        String serviceName = AccessControlUtil.getServiceName(msgContext);
+
+        Boolean authenticationEnabledFromConfigurationLevel =
+                AccessControlUtil.isAuthenticationEnabledFromConfigurationLevel(serviceName);
         if (authenticationEnabledFromConfigurationLevel != null) {
             skipAuth = !authenticationEnabledFromConfigurationLevel;
         }

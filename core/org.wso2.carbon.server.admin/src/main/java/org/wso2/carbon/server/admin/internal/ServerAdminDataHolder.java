@@ -41,7 +41,7 @@ public class ServerAdminDataHolder {
      * The classloader which should be set in the TCCL before restarting the server
      */
     public ClassLoader restartThreadContextClassloader;
-    private boolean globalServiceAccessControlEnabled;
+    private boolean serviceAccessControlEnabled;
 
     public static ServerAdminDataHolder getInstance() {
         return instance;
@@ -107,7 +107,7 @@ public class ServerAdminDataHolder {
     }
 
     public Map<String, ServiceAuthentication> getServiceAuthenticationMap() {
-        return serviceAuthenticationMap;
+        return new HashMap<>(serviceAuthenticationMap);
     }
 
     public void setServiceAuthenticationMap(
@@ -115,11 +115,11 @@ public class ServerAdminDataHolder {
         this.serviceAuthenticationMap = serviceAuthenticationMap;
     }
 
-    public void setGlobalServiceAccessControlEnabled(boolean globalServiceAccessControlEnabled) {
-        this.globalServiceAccessControlEnabled = globalServiceAccessControlEnabled;
+    public void setServiceAccessControlEnabled(boolean serviceAccessControlEnabled) {
+        this.serviceAccessControlEnabled = serviceAccessControlEnabled;
     }
 
-    public boolean isGlobalServiceAccessControlEnabled() {
-        return globalServiceAccessControlEnabled;
+    public boolean isServiceAccessControlEnabled() {
+        return serviceAccessControlEnabled;
     }
 }
