@@ -15,6 +15,7 @@
  */
 package org.wso2.carbon.server.admin.internal;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.axis2.context.ConfigurationContext;
@@ -107,7 +108,7 @@ public class ServerAdminDataHolder {
     }
 
     public Map<String, ServiceAuthentication> getServiceAuthenticationMap() {
-        return new HashMap<>(serviceAuthenticationMap);
+        return Collections.unmodifiableMap(serviceAuthenticationMap);
     }
 
     public void setServiceAuthenticationMap(
