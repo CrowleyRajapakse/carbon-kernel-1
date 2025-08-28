@@ -189,6 +189,11 @@
             <artifactId>org.wso2.carbon.admin.advisory.mgt.ui</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${apache.commons.lang3.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
