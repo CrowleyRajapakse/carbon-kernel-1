@@ -121,14 +121,16 @@ public class AuthorizationHandler extends AbstractHandler {
 
                 List<String> resourcePermissionsFromConfiguration =
                         AccessControlUtil.getAuthorizationPermissionsFromConfigLevel(serviceName, opName);
-                if (resourcePermissionsFromConfiguration != null) {
+                if (resourcePermissionsFromConfiguration != null && !resourcePermissionsFromConfiguration.isEmpty()) {
                     resourceId = String.join(",", resourcePermissionsFromConfiguration);
                 }
-                resourceId = resourceId.trim();
+                if (resourceId != null && !resourceId.trim().isEmpty()) {
+                    resourceId = resourceId.trim();
+                }
                 AuthorizationManager authMan = realm.getAuthorizationManager();
                 if (!isAuthorized(authMan, username, resourceId, action)) {
                     log.error("Access Denied. Failed authorization attempt to access service '"
-                              + serviceName + "' operation '" + opName + "' by '" + username + "'");
+                            + serviceName + "' operation '" + opName + "' by '" + username + "'");
                     AxisFault afault = new AxisFault("Access Denied.");
                     afault.setFaultCode(ServerConstants.AUTHORIZATION_FAULT_CODE);
                     throw afault;
