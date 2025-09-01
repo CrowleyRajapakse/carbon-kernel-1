@@ -265,6 +265,12 @@ public class ServerAdminServiceComponent {
                                                     operationElement.getAttributeValue(new QName("name"));
                                             operationAuthorization.setResource(operationName);
                                             List<String> permissions = retrievePermissions(operationElement);
+                                            OMElement authEnabledElement = operationElement
+                                                    .getFirstChildWithName(new QName("AuthenticationEnabled"));
+                                            if (authEnabledElement != null) {
+                                                operationAuthorization.setAuthenticationEnabled(
+                                                        Boolean.parseBoolean(authEnabledElement.getText()));
+                                            }
                                             operationAuthorization.setPermissions(permissions);
                                             serviceAuthentication.getOperationAuthMap().put(
                                                     operationAuthorization.getResource(), operationAuthorization);

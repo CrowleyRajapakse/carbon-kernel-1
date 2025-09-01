@@ -88,6 +88,34 @@ public class AccessControlUtil {
     }
 
     /**
+     * Get the authorization permissions for the operation from the configuration level.
+     * This method checks at both service and operation level
+     *
+     * @param serviceName   service name of the operation
+     * @param operationName operation name
+     * @return true if authentication is enabled, false if disabled and null if not configured
+     */
+    public static Boolean isAuthenticationEnabledFromConfigurationLevel(String serviceName, String operationName) {
+
+        if (ServerAdminDataHolder.getInstance().isServiceAccessControlEnabled()) {
+            ServiceAuthentication serviceAuth =
+                    ServerAdminDataHolder.getInstance().getServiceAuthenticationMap().get(serviceName);
+            if (serviceAuth != null) {
+                Map<String, OperationAuthorization> operationAuthMap = serviceAuth.getOperationAuthMap();
+                if (operationAuthMap != null) {
+                    OperationAuthorization operationAuthorization = operationAuthMap.get(operationName);
+                    if (operationAuthorization != null && operationAuthorization.isAuthenticationEnabled() != null) {
+                        return operationAuthorization.isAuthenticationEnabled();
+                    } else {
+                        return serviceAuth.isAuthenticationEnabled();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Check whether authentication is enabled for the service from the configuration level.
      *
      * @param msgContext MessageContext
@@ -95,8 +123,9 @@ public class AccessControlUtil {
      */
     public static boolean isAuthenticationEnabledAtConfigurationLevel(MessageContext msgContext) {
 
-        String serviceName = AccessControlUtil.getServiceName(msgContext);
-        Boolean enabled = AccessControlUtil.isAuthenticationEnabledFromConfigurationLevel(serviceName);
+        String serviceName = getServiceName(msgContext);
+        String operationName = msgContext.getAxisOperation().getName().getLocalPart();
+        Boolean enabled = isAuthenticationEnabledFromConfigurationLevel(serviceName, operationName);
         return enabled != null && enabled;
     }
 }

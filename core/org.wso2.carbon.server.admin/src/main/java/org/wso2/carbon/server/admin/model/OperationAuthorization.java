@@ -25,10 +25,21 @@ import java.util.List;
  */
 public class OperationAuthorization {
     private String resource;
+    private Boolean authenticationEnabled;
     private List<String> permissions = new ArrayList<>();
 
     public String getResource() {
         return resource;
+    }
+
+    public Boolean isAuthenticationEnabled() {
+
+        return authenticationEnabled;
+    }
+
+    public void setAuthenticationEnabled(Boolean authenticationEnabled) {
+
+        this.authenticationEnabled = authenticationEnabled;
     }
 
     public void setResource(String resource) {
