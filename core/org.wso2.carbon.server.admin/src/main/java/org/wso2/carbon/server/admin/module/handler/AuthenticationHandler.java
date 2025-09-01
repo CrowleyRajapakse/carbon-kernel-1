@@ -51,7 +51,8 @@ public class AuthenticationHandler extends AbstractHandler {
     public InvocationResponse invoke(MessageContext msgContext) throws AxisFault {
 
         // do not authenticate it is a call  to a generic service
-        if (callToGeneralService(msgContext) || skipAuthentication(msgContext)) {
+        if (!AccessControlUtil.isAuthenticationEnabledAtConfigurationLevel(msgContext) &&
+                (this.callToGeneralService(msgContext) || skipAuthentication(msgContext))) {
             return InvocationResponse.CONTINUE;
         }
 
@@ -140,11 +141,6 @@ public class AuthenticationHandler extends AbstractHandler {
 
     private boolean isAuthenticated(MessageContext msgContext,
                                     String remoteIP) throws AuthenticationFailureException {
-
-        // If operation is unrestricted we dont need to do authentication
-        if (skipAuthentication(msgContext)) {
-            return true;
-        }
 
         BackendAuthenticator authenticator =
                 AuthenticatorServerRegistry.getCarbonAuthenticator(msgContext);
@@ -246,12 +242,6 @@ public class AuthenticationHandler extends AbstractHandler {
         Parameter param = operation.getParameter("DoAuthentication");
         if (param != null && "false".equals(param.getValue())) {
         	skipAuth = true;
-        }
-        String serviceName = AccessControlUtil.getServiceName(msgContext);
-        Boolean authenticationEnabledFromConfigurationLevel =
-                AccessControlUtil.isAuthenticationEnabledFromConfigurationLevel(serviceName);
-        if (authenticationEnabledFromConfigurationLevel != null) {
-            skipAuth = !authenticationEnabledFromConfigurationLevel;
         }
         return skipAuth;
     }

@@ -86,4 +86,17 @@ public class AccessControlUtil {
         }
         return null;
     }
+
+    /**
+     * Check whether authentication is enabled for the service from the configuration level.
+     *
+     * @param msgContext MessageContext
+     * @return true if authentication is enabled, false if disabled or not configured
+     */
+    public static boolean isAuthenticationEnabledAtConfigurationLevel(MessageContext msgContext) {
+
+        String serviceName = AccessControlUtil.getServiceName(msgContext);
+        Boolean enabled = AccessControlUtil.isAuthenticationEnabledFromConfigurationLevel(serviceName);
+        return enabled != null && enabled;
+    }
 }

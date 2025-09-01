@@ -16,7 +16,6 @@
 
 package org.wso2.carbon.server.admin.module.handler;
 
-import java.util.List;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.AxisOperation;
@@ -37,6 +36,7 @@ import org.wso2.carbon.utils.ServerConstants;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.util.List;
 
 import static org.wso2.carbon.utils.CarbonUtils.isLegacyAuditLogsDisabled;
 
@@ -48,9 +48,12 @@ public class AuthorizationHandler extends AbstractHandler {
 
     private static Log log = LogFactory.getLog(AuthorizationHandler.class.getClass());
     private static Log audit = CarbonConstants.AUDIT_LOG;
+    private static final String DEFAULT_ACTION_PERMISSION = "/permission/admin/login";
 
     public InvocationResponse invoke(MessageContext msgContext) throws AxisFault {
-        if (this.callToGeneralService(msgContext) || skipAuthentication(msgContext) ) {
+
+        boolean isAuthEnabledAtConfigLevel = AccessControlUtil.isAuthenticationEnabledAtConfigurationLevel(msgContext);
+        if (!isAuthEnabledAtConfigLevel && (this.callToGeneralService(msgContext) || skipAuthentication(msgContext))) {
             return InvocationResponse.CONTINUE;
         }
         if(CarbonUtils.isWorkerNode()){  // You are not allowed to invoke admin services on worker nodes
@@ -67,7 +70,7 @@ public class AuthorizationHandler extends AbstractHandler {
         String opName = operation.getName().getLocalPart();
 
         Parameter actionParam = operation.getParameter("AuthorizationAction");
-        if (actionParam == null) {
+        if (!isAuthEnabledAtConfigLevel && actionParam == null) {
             if (!isLegacyAuditLogsDisabled()) {
                 audit.warn("Unauthorized call by tenant " + carbonCtx.getTenantDomain() +
                         ",user " + carbonCtx.getUsername() + " to service:" + service.getName() +
@@ -78,9 +81,14 @@ public class AuthorizationHandler extends AbstractHandler {
         }
 
         String serviceName = service.getName();
+        String action;
 
         try {
-            String action = ((String) actionParam.getValue()).trim();
+            if (actionParam == null || actionParam.getValue() == null) {
+                action = DEFAULT_ACTION_PERMISSION;
+            } else {
+                action = ((String) actionParam.getValue()).trim();
+            }
             String authzResourceId = null;
             String authzAction = null;
 
@@ -175,13 +183,6 @@ public class AuthorizationHandler extends AbstractHandler {
         Parameter param = operation.getParameter("DoAuthentication");
         if (param != null && "false".equals(param.getValue())) {
             skipAuth = true;
-        }
-        String serviceName = AccessControlUtil.getServiceName(msgContext);
-
-        Boolean authenticationEnabledFromConfigurationLevel =
-                AccessControlUtil.isAuthenticationEnabledFromConfigurationLevel(serviceName);
-        if (authenticationEnabledFromConfigurationLevel != null) {
-            skipAuth = !authenticationEnabledFromConfigurationLevel;
         }
         return skipAuth;
     }
