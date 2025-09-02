@@ -50,9 +50,13 @@ public class AuthenticationHandler extends AbstractHandler {
 
     public InvocationResponse invoke(MessageContext msgContext) throws AxisFault {
 
-        // do not authenticate it is a call  to a generic service
-        if (!AccessControlUtil.isAuthenticationEnabledAtConfigurationLevel(msgContext) &&
-                (this.callToGeneralService(msgContext) || skipAuthentication(msgContext))) {
+        Boolean isAuthEnabledAtConfigLevel = AccessControlUtil.isAuthenticationEnabledAtConfigurationLevel(msgContext);
+        // If <AuthenticationEnabled> is not defined at service access control proceed with server.xml checks.
+        // But if <AuthenticationEnabled> is defined and it is false continue the Invocation.
+        if ( isAuthEnabledAtConfigLevel == null
+                && (this.callToGeneralService(msgContext) || skipAuthentication(msgContext))) {
+            return InvocationResponse.CONTINUE;
+        } else if (Boolean.FALSE.equals(isAuthEnabledAtConfigLevel)) {
             return InvocationResponse.CONTINUE;
         }
 

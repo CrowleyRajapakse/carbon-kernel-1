@@ -52,8 +52,13 @@ public class AuthorizationHandler extends AbstractHandler {
 
     public InvocationResponse invoke(MessageContext msgContext) throws AxisFault {
 
-        boolean isAuthEnabledAtConfigLevel = AccessControlUtil.isAuthenticationEnabledAtConfigurationLevel(msgContext);
-        if (!isAuthEnabledAtConfigLevel && (this.callToGeneralService(msgContext) || skipAuthentication(msgContext))) {
+        Boolean isAuthEnabledAtConfigLevel = AccessControlUtil.isAuthenticationEnabledAtConfigurationLevel(msgContext);
+        // If <AuthenticationEnabled> is not defined at service access control proceed with server.xml checks.
+        // But if <AuthenticationEnabled> is defined and it is false continue the Invocation.
+        if ( isAuthEnabledAtConfigLevel == null
+                && (this.callToGeneralService(msgContext) || skipAuthentication(msgContext))) {
+            return InvocationResponse.CONTINUE;
+        } else if (Boolean.FALSE.equals(isAuthEnabledAtConfigLevel)) {
             return InvocationResponse.CONTINUE;
         }
         if(CarbonUtils.isWorkerNode()){  // You are not allowed to invoke admin services on worker nodes
@@ -70,7 +75,7 @@ public class AuthorizationHandler extends AbstractHandler {
         String opName = operation.getName().getLocalPart();
 
         Parameter actionParam = operation.getParameter("AuthorizationAction");
-        if (!isAuthEnabledAtConfigLevel && actionParam == null) {
+        if (isAuthEnabledAtConfigLevel == null && actionParam == null) {
             if (!isLegacyAuditLogsDisabled()) {
                 audit.warn("Unauthorized call by tenant " + carbonCtx.getTenantDomain() +
                         ",user " + carbonCtx.getUsername() + " to service:" + service.getName() +
