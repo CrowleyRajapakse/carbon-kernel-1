@@ -30,13 +30,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.axis2.context.ConfigurationContext;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.base.api.ServerConfigurationService;
-import org.wso2.carbon.context.internal.OSGiDataHolder;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.tomcat.api.CarbonTomcatService;
@@ -576,13 +574,13 @@ public class CarbonUIUtil {
 
             // Replace ".." with the node of path directory.
             int index = 0;
-            while (relativePath.contains("..")) {
+            while (relativePath.contains("..") && index < splitPathList.size()) {
                 relativePath = relativePath.replaceFirst("..", splitPathList.get(index));
                 index++;
             }
 
             // Add "/", if relative path is not starting with.
-            if (relativePath.charAt(0) != '/') {
+            if (!relativePath.isEmpty() && relativePath.charAt(0) != '/') {
                 relativePath = PATH_SEPARATOR + relativePath;
             }
         }
