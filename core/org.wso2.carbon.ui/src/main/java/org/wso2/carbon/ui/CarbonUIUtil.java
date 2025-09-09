@@ -64,6 +64,9 @@ public class CarbonUIUtil {
     //To store the product specific params 
     private static HashMap productParams = new HashMap();
 
+    private static final String PATH_SEPARATOR = "/";
+    private static final String CARBON = "carbon";
+
     /**
      * Get a proxy object to the business logic implementation class.
      * <p/>
@@ -553,22 +556,22 @@ public class CarbonUIUtil {
 
             // Removing any tailing "/" in the context.
             context = getAdminConsoleBaseURL(context);
-            if (context.endsWith("/")) {
+            if (context.endsWith(PATH_SEPARATOR)) {
                 context = context.substring(0, context.length() - 1);
             }
 
             // Remove any tailing "/carbon" in context to build base URL.
-            if (context.endsWith("/carbon")) {
+            if (context.endsWith(PATH_SEPARATOR + CARBON)) {
                 context = context.substring(0, context.length() - 7);
             }
 
             // Build relative path starting from root context.
             List<String> splitPathList = new ArrayList<>(Arrays.asList(
-                    request.getContextPath().concat(request.getServletPath()).split("/")));
+                    request.getContextPath().concat(request.getServletPath()).split(PATH_SEPARATOR)));
             splitPathList.remove(0);
             // If the request is a base URL, add the carbon as the root context.
             if (splitPathList.isEmpty()) {
-                splitPathList.add("carbon");
+                splitPathList.add(CARBON);
             }
 
             // Replace ".." with the node of path directory.
@@ -580,7 +583,7 @@ public class CarbonUIUtil {
 
             // Add "/", if relative path is not starting with.
             if (relativePath.charAt(0) != '/') {
-                relativePath = "/" + relativePath;
+                relativePath = PATH_SEPARATOR + relativePath;
             }
         }
 
@@ -594,7 +597,7 @@ public class CarbonUIUtil {
      */
     public static boolean isResolveAbsoluteURLsEnabled() {
 
-        String  isResolveAbsoluteURLsEnabled = CarbonUIServiceComponent.getServerConfiguration()
+        String isResolveAbsoluteURLsEnabled = CarbonUIServiceComponent.getServerConfiguration()
                 .getFirstProperty(CarbonConstants.IS_RESOLVE_ABSOLUTE_URLS_ENABLED);
 
         if (isResolveAbsoluteURLsEnabled == null) {
