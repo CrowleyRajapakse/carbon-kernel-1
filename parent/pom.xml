@@ -445,7 +445,7 @@
         <axiom.osgi.version>1.2.11-wso2v29</axiom.osgi.version>
         <axiom.osgi.version.range>[1.2.11, 1.3.0)</axiom.osgi.version.range>
         <commons-text.orbit.version>1.10.0.wso2v2</commons-text.orbit.version>
-        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <commons-lang3.version>3.18.0.wso2v1</commons-lang3.version>
 
 
         <!-- Spring Framework -->
@@ -1131,6 +1131,11 @@
                 <version>${version.commons.codec}</version>
             </dependency>
             <dependency>
+                <groupId>org.wso2.orbit.org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>annogen.wso2</groupId>
                 <artifactId>annogen</artifactId>
                 <version>${version.annogen}</version>
@@ -1230,6 +1235,12 @@
                 <artifactId>addressing</artifactId>
                 <version>${version.addressing}</version>
                 <type>mar</type>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>taglibs.wso2</groupId>
@@ -1793,11 +1804,23 @@
                 <groupId>org.wso2.config.mapper</groupId>
                 <artifactId>config-mapper</artifactId>
                 <version>${config.mapper.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.hubspot.jinjava</groupId>
                 <artifactId>jinjava</artifactId>
                 <version>${version.jinjava}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>net.consensys.cava</groupId>
