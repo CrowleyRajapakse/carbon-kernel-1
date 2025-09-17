@@ -25,6 +25,7 @@ import org.osgi.framework.ServiceReference;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.core.common.AuthenticationException;
 import org.wso2.carbon.registry.core.Registry;
+import org.wso2.carbon.ui.CarbonUIUtil;
 import org.wso2.carbon.ui.deployment.beans.CarbonUIDefinitions;
 import org.wso2.carbon.ui.deployment.beans.Context;
 import org.wso2.carbon.ui.internal.CarbonUIServiceComponent;
@@ -243,16 +244,17 @@ public class CarbonSecuredHttpContext extends SecuredComponentEntryHttpContext {
 
         if (requestedURI.endsWith("/carbon/")) {
             if (skipLoginPage) {
-                response.sendRedirect(contextPath + indexPageURL + "?skipLoginPage=true");
+                response.sendRedirect(CarbonUIUtil.resolveAdminConsoleBaseURL(contextPath,indexPageURL + "?skipLoginPage=true",
+                        request));
             } else {
-                response.sendRedirect(contextPath + indexPageURL);
+                response.sendRedirect(CarbonUIUtil.resolveAdminConsoleBaseURL(contextPath, indexPageURL, request));
             }
             return false;
         } else if (requestedURI.indexOf("/registry/atom") == -1 && requestedURI.endsWith("/carbon")) {
             if (skipLoginPage) {
-                response.sendRedirect(contextPath + indexPageURL + "?skipLoginPage=true");
+                response.sendRedirect(CarbonUIUtil.resolveAdminConsoleBaseURL(contextPath, indexPageURL + "?skipLoginPage=true", request));
             } else {
-                response.sendRedirect(contextPath + indexPageURL);
+                response.sendRedirect(CarbonUIUtil.resolveAdminConsoleBaseURL(contextPath, indexPageURL, request));
             }
             return false;
         } else if (CarbonUILoginUtil.letRequestedUrlIn(requestedURI, tempUrl)) {
@@ -272,9 +274,10 @@ public class CarbonSecuredHttpContext extends SecuredComponentEntryHttpContext {
         }
         if (request.getSession().isNew()) {
             if (skipLoginPage) {
-                response.sendRedirect(contextPath + "/carbon/admin/login_action.jsp");
+                response.sendRedirect(CarbonUIUtil.resolveAdminConsoleBaseURL(contextPath, "/carbon/admin/login_action.jsp",
+                        request));
             } else {
-                response.sendRedirect(contextPath + "/carbon/admin/login.jsp");
+                response.sendRedirect(CarbonUIUtil.resolveAdminConsoleBaseURL(contextPath, "/carbon/admin/login.jsp", request));
 
             }
             return false;
@@ -450,7 +453,7 @@ public class CarbonSecuredHttpContext extends SecuredComponentEntryHttpContext {
                     + defaultContext.getContextName() + "/";
             response.sendRedirect(defaultContextUrl);
         } else {
-            response.sendRedirect("carbon");
+            response.sendRedirect(CarbonUIUtil.resolveAdminConsoleBaseURL("", "carbon", request));
         }
         return false;
     }
