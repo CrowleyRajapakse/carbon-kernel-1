@@ -84,6 +84,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -105,6 +106,8 @@ public class CarbonUtils {
     private static final int ENTITY_EXPANSION_LIMIT = 0;
     private static final String SECURITY_MANAGER_PROPERTY = org.apache.xerces.impl.Constants.XERCES_PROPERTY_PREFIX +
             org.apache.xerces.impl.Constants.SECURITY_MANAGER_PROPERTY;
+    private static String JAVAX_TRANSFORMER_PROP_VAL =
+            "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl";
     private static boolean isServerConfigInitialized;
     private static Log audit = CarbonConstants.AUDIT_LOG;
     private static Gson gson = new Gson();
@@ -1201,14 +1204,32 @@ public class CarbonUtils {
     /**
      * Create a secure process enabled TransformerFactory.
      *
-     * @return A new instance of TransformerFactory.
-     * @throws TransformerConfigurationException if a configuration error has occurred while processing XML securely.
+     * @return Secured TransformerFactory which is stricly implemented via
+     * com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl
+     * @throws TransformerConfigurationException
      */
     public static TransformerFactory getSecureTransformerFactory() throws TransformerConfigurationException {
 
-        TransformerFactory factory = TransformerFactory.newInstance();
-        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        return factory;
+        TransformerFactory transformerFactory;
+        try {
+            // Prevent XXE Attack by ensure using the correct factory class to create TrasformerFactory instance.
+            // This will instruct Java to use the version which supports using ACCESS_EXTERNAL_DTD argument.
+            transformerFactory = TransformerFactory.newInstance(JAVAX_TRANSFORMER_PROP_VAL, null);
+        } catch (TransformerFactoryConfigurationError e) {
+            log.error("Failed to load default TransformerFactory", e);
+            // This part uses the default implementation of xalan.
+            transformerFactory = TransformerFactory.newInstance();
+        }
+
+        try {
+            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (TransformerConfigurationException e) {
+            log.error("Failed to load XML Processor Feature " + XMLConstants.FEATURE_SECURE_PROCESSING +
+                    " for secure-processing.");
+        }
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+        return transformerFactory;
     }
 
     private static final boolean isWorkerNode = Boolean.parseBoolean(System.getProperty("workerNode"));
