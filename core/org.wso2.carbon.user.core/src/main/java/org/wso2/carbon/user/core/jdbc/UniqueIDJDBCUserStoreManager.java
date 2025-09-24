@@ -2556,7 +2556,6 @@ public class UniqueIDJDBCUserStoreManager extends JDBCUserStoreManager {
                 prepStmt.setString(index++, userID);
             }
 
-            prepStmt = dbConnection.prepareStatement(sqlStmt);
             if (sqlStmt.contains(UserCoreConstants.UM_TENANT_COLUMN)) {
                 prepStmt.setInt(index++, tenantId);
                 prepStmt.setInt(index++, tenantId);
