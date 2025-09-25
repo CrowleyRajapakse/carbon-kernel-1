@@ -41,7 +41,6 @@ import static org.mockito.Mockito.when;
  * Test case to verify Axis2ServiceRegistry functionality.
  */
 public class Axis2ServiceRegistryTest extends Axis2ModuleRegistryTest {
-
     @Test(groups = "org.wso2.carbon.utils.deployment")
     public void testRegister() throws Exception {
         ConfigurationContext configurationContext = createTestConfigurationContext();
@@ -58,7 +57,7 @@ public class Axis2ServiceRegistryTest extends Axis2ModuleRegistryTest {
         File serviceDirectory = Paths.get(testDir, "services").toFile();
         File wsdlDirectory = Paths.get(testDir, "wsdls").toFile();
         Assert.assertTrue(serviceDirectory.exists() && serviceDirectory.isDirectory() &&
-        wsdlDirectory.exists() && wsdlDirectory.isDirectory());
+                wsdlDirectory.exists() && wsdlDirectory.isDirectory());
         Enumeration<URL> serviceEntries = new Axis2ModuleRegistryTest.
                 ManifestModuleIterator(getFileListFromGiveDirectory(serviceDirectory.getAbsolutePath()));
         Enumeration<URL> wsdlEntries = new Axis2ModuleRegistryTest.
