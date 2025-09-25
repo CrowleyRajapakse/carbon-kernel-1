@@ -847,9 +847,16 @@
       	    <Period>{{remote_logging.config_sync.period}}</Period>
         </ConfigSync>
     </RemoteLogging>
+
     <DeniedAdminServices>
+        <!--
+            Do not change the deny_list to change the denied service list. Instead
+            add the exceptions_to_deny_list to enable any disabled service.
+        -->
         {% for service in admin_service.deny_list %}
+        {% if !admin_service.exceptions_to_deny_list.contains(service) %}
         <Service>{{service}}</Service>
+        {% endif %}
         {% endfor %}
     </DeniedAdminServices>
 
