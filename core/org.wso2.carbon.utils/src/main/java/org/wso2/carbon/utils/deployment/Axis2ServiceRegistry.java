@@ -15,6 +15,19 @@
  */
 package org.wso2.carbon.utils.deployment;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
@@ -35,20 +48,16 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 import org.wso2.carbon.base.CarbonBaseConstants;
+import org.wso2.carbon.base.ServerConfiguration;
+import org.wso2.carbon.base.api.ServerConfigurationService;
+import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.IOStreamUtils;
 
 import javax.xml.stream.XMLStreamException;
-import java.io.*;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.wso2.carbon.utils.internal.CarbonUtilsDataHolder;
 
 import static org.wso2.carbon.utils.WSO2Constants.BUNDLE_ID;
 
@@ -164,6 +173,8 @@ public class Axis2ServiceRegistry {
     }
 
     private void addServices(Bundle bundle) {
+        ServerConfiguration serverConfiguration = CarbonUtils.getServerConfiguration();
+        Set<String> denyServiceList = serverConfiguration.getDeniedAdminServices();
         if (!serviceGroupMap.containsKey(bundle)) {
             Enumeration enumeration = bundle.findEntries("META-INF", "*services.xml", true);
             List<AxisServiceGroup> axisServiceGroupList = null;
@@ -207,10 +218,13 @@ public class Axis2ServiceRegistry {
                         ServiceBuilder serviceBuilder = new ServiceBuilder(configCtx, axisService);
                         serviceBuilder.setWsdlServiceMap(wsdlServicesMap);
                         AxisService service = serviceBuilder.populateService(rootElement);
-                        ArrayList<AxisService> serviceList = new ArrayList<AxisService>();
-                        serviceList.add(service);
+                        List<AxisService> axisServices = new ArrayList<>();
+                        axisServices.add(service);
+                        ArrayList<? extends AxisService> filteredServices =
+                                retrieveFilteredServices(bundle, denyServiceList, axisServices);
+                        if (filteredServices == null || filteredServices.isEmpty()) continue;
                         DeploymentEngine.addServiceGroup(serviceGroup,
-                                serviceList,
+                                filteredServices,
                                 null,
                                 null,
                                 axisConfig);
@@ -224,8 +238,11 @@ public class Axis2ServiceRegistry {
                                 new ServiceGroupBuilder(rootElement, wsdlServicesMap,
                                         configCtx);
                         ArrayList<? extends AxisService> serviceList = groupBuilder.populateServiceGroup(serviceGroup);
+                        ArrayList<? extends AxisService> filteredServiceList = retrieveFilteredServices(bundle,
+                                denyServiceList, serviceList);
+                        if (filteredServiceList == null || filteredServiceList.isEmpty()) continue;
                         DeploymentEngine.addServiceGroup(serviceGroup,
-                                serviceList,
+                                filteredServiceList,
                                 null,
                                 null,
                                 axisConfig);
@@ -248,6 +265,30 @@ public class Axis2ServiceRegistry {
                 serviceGroupMap.put(bundle, axisServiceGroupList);
             }
         }
+    }
+
+    private static ArrayList<? extends AxisService> retrieveFilteredServices(Bundle bundle, Set<String> denyServiceList,
+                                                                   List<? extends AxisService> serviceList) {
+        if (denyServiceList == null || denyServiceList.isEmpty()) {
+            return (ArrayList<? extends AxisService>) serviceList;
+        }
+        ArrayList<AxisService> filteredServiceList = new ArrayList<>();
+        if (denyServiceList.contains("*")) {
+            return filteredServiceList;
+        } else {
+            for (AxisService axisService : serviceList) {
+                if (!denyServiceList.contains(axisService.getName())) {
+                    filteredServiceList.add(axisService);
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Service " + axisService.getName() + " is in the deny list. " +
+                                "Hence not deploying this service from the bundle "
+                                + bundle.getSymbolicName());
+                    }
+                }
+            }
+        }
+        return filteredServiceList;
     }
 
     private HashMap processWSDL(Bundle bundle) throws IOException, XMLStreamException {

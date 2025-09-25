@@ -847,4 +847,10 @@
       	    <Period>{{remote_logging.config_sync.period}}</Period>
         </ConfigSync>
     </RemoteLogging>
+    <DeniedAdminServices>
+        {% for service in admin_service.deny_list %}
+        <Service>{{service}}</Service>
+        {% endfor %}
+    </DeniedAdminServices>
+
 </Server>

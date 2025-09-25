@@ -41,9 +41,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import javax.xml.namespace.QName;
@@ -93,6 +95,8 @@ public class ServerConfiguration implements ServerConfigurationService {
 			.getLog(ServerConfigurationService.class);
 
 	private Map<String, List<String>> configuration = new HashMap<String, List<String>>();
+
+	private final Set<String> deniedAdminServices = new HashSet<>();
 	private boolean isInitialized;
 	private boolean isLoadedConfigurationPreserved = false;
 	private String documentXML;
@@ -281,6 +285,19 @@ public class ServerConfiguration implements ServerConfigurationService {
 		for (Iterator childElements = serverConfig.getChildElements(); childElements.hasNext(); ) {
 			OMElement element = (OMElement) childElements.next();
 			nameStack.push(element.getLocalName());
+			if ("DeniedAdminServices".equals(element.getLocalName())){
+				for (Iterator denyServices = element.getChildElements(); denyServices.hasNext(); ) {
+					OMElement denyService = (OMElement) denyServices.next();
+					if ("Service".equals(denyService.getLocalName()) && elementHasText(denyService)) {
+						deniedAdminServices.add(denyService.getText().trim());
+					}
+				}
+				String key = getKey(nameStack);
+				String value = String.join(",", deniedAdminServices);
+				addToConfiguration(key, value);
+				nameStack.pop();
+				continue;
+			}
 			if (elementHasText(element)) {
 				String key = getKey(nameStack);
 				String value;
@@ -534,5 +551,8 @@ public class ServerConfiguration implements ServerConfigurationService {
 
 	protected String getProtectedValue(String key) {
 		return secretResolver.resolve("Carbon." + key);
+	}
+	public Set<String> getDeniedAdminServices() {
+		return deniedAdminServices;
 	}
 }

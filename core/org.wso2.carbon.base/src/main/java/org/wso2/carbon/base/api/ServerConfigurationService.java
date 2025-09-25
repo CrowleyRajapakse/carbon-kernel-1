@@ -2,6 +2,8 @@ package org.wso2.carbon.base.api;
 
 import org.w3c.dom.Element;
 
+import java.util.Set;
+
 public interface ServerConfigurationService {
     void setConfigurationProperty(String key, String value);
 
@@ -12,5 +14,7 @@ public interface ServerConfigurationService {
     String[] getProperties(String key);
 
     Element getDocumentElement();
+
+    public Set<String> getDeniedAdminServices();
 
 }

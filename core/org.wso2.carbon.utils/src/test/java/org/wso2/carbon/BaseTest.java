@@ -23,6 +23,7 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.base.ServerConfigurationException;
+import org.wso2.carbon.context.internal.OSGiDataHolder;
 import org.wso2.carbon.utils.ServerConstants;
 
 import java.io.File;
@@ -30,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import org.wso2.carbon.utils.internal.CarbonUtilsDataHolder;
 
 /**
  * Base test class shared by test cases in carbon utils component.
