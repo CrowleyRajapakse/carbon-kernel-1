@@ -59,6 +59,7 @@ public class DatabaseUtil {
     private static final String VALIDATION_INTERVAL = "validationInterval";
     private static final long DEFAULT_VALIDATION_INTERVAL = 30000;
     private static final String SQL_STATEMENT_PARAMETER_PLACEHOLDER = "?";
+    private static final String SQL_STATEMENT_PARAMETER_SEPARATOR = ",";
     private static final String DISABLED = "Disabled";
     public static final String JDBC_INTERCEPTOR_SEPARATOR = ";";
     private static final String DEFAULT_CORRELATION_LOG_INTERCEPTOR = "org.wso2.carbon.ndatasource.rdbms"
@@ -1241,5 +1242,17 @@ public class DatabaseUtil {
             jdbcInterceptors = jdbcInterceptors + JDBC_INTERCEPTOR_SEPARATOR + DEFAULT_CORRELATION_LOG_INTERCEPTOR;
         }
         poolProperties.setJdbcInterceptors(jdbcInterceptors);
+    }
+
+    /**
+     * Build a dynamic parameter string for dynamic length queries.
+     *
+     * @param repetitiveItem Item to be repeated in the string.
+     * @param iterationCount Iteration count.
+     * @return Dynamic parameter string.
+     */
+    public static String buildDynamicParameterString(String repetitiveItem, int iterationCount) {
+
+        return StringUtils.repeat(repetitiveItem, SQL_STATEMENT_PARAMETER_SEPARATOR, iterationCount);
     }
 }
