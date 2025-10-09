@@ -1347,35 +1347,42 @@ public class JDBCAuthorizationManager implements AuthorizationManager {
         }
     }
 
-    private void addPermissionId(Connection dbConnection, String resourceId, String action)
-            throws UserStoreException {
-        PreparedStatement prepStmt = null;
-        try {
-            prepStmt = dbConnection.prepareStatement(DBConstants.ADD_PERMISSION_SQL);
+    private void addPermissionId(Connection dbConnection, String resourceId, String action) throws UserStoreException {
+        try (PreparedStatement prepStmt = dbConnection.prepareStatement(DBConstants.ADD_PERMISSION_SQL)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Adding permission for resourceId: " + resourceId + " and action: " + action);
+            }
             prepStmt.setString(1, resourceId);
             prepStmt.setString(2, action);
             prepStmt.setInt(3, tenantId);
             int count = prepStmt.executeUpdate();
             dbConnection.commit();
             if (log.isDebugEnabled()) {
-                log.debug("Executed query is " + DBConstants.ADD_PERMISSION_SQL
-                        + " and number of updated rows :: " + count);
+                log.debug("Executed query is " + DBConstants.ADD_PERMISSION_SQL + " and number of updated rows :: " +
+                        count);
             }
-        } catch (SQLIntegrityConstraintViolationException e) {
-            if (log.isDebugEnabled()) {
-                log.debug(e.getMessage(), e);
+        } catch (SQLException e) {
+            try {
+                dbConnection.rollback();
+            } catch (SQLException ignored) {
             }
-        }
-        catch (SQLException e) {
             String errorMessage =
                     "Error occurred while adding UI permission ID for resource id : " + resourceId + " & action : " +
-                    action;
-            if (log.isDebugEnabled()) {
-                log.debug(errorMessage, e);
+                            action;
+            if (e instanceof SQLIntegrityConstraintViolationException || "23000".equals(e.getSQLState()) ||
+                    "23505".equals(e.getSQLState())) {
+                if (getPermissionIdFromStore(dbConnection, resourceId, action) != -1) {
+                    // Already entry added by another thread. Hence we can ignore this exception.
+                    if (log.isDebugEnabled()) {
+                        log.debug("Ignoring the duplicate entry exception for resourceId: " + resourceId +
+                                " and action: " + action, e);
+                    }
+                } else {
+                    throw new UserStoreException(errorMessage, e);
+                }
+            } else {
+                throw new UserStoreException(errorMessage, e);
             }
-            throw new UserStoreException(errorMessage, e);
-        } finally {
-            DatabaseUtil.closeAllConnections(null, prepStmt);
         }
     }
 
