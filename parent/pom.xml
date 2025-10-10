@@ -629,12 +629,11 @@
         <maven.spotbugsplugin.version>3.1.10</maven.spotbugsplugin.version>
         <maven.spotbugsplugin.exclude.file>spotbugs-exclude.xml</maven.spotbugsplugin.exclude.file>
         <maven.spotbugs.dependency.version>3.1.11</maven.spotbugs.dependency.version>
-        <version.jinjava>2.7.2</version.jinjava>
+        <version.jinjava>2.7.5</version.jinjava>
+        <version.immutables-exceptions>1.11.2</version.immutables-exceptions>
         <version.cava-toml>0.5.0</version.cava-toml>
         <version.checkstyle>7.8.2</version.checkstyle>
         <version.jackson>2.17.2</version.jackson>
-        <version.jackson.databind>2.17.2</version.jackson.databind>
-        <version.jackson.dataformat>2.17.2</version.jackson.dataformat>
         <version.guava>33.0.0-jre</version.guava>
         <version.ciphertool>1.1.0</version.ciphertool>
         <xml.unit.verions>2.6.2</xml.unit.verions>
@@ -1819,6 +1818,16 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>com.hubspot.immutables</groupId>
+                <artifactId>immutables-exceptions</artifactId>
+                <version>${version.immutables-exceptions}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
                 <groupId>net.consensys.cava</groupId>
                 <artifactId>cava-toml</artifactId>
                 <version>${version.cava-toml}</version>
@@ -1831,7 +1840,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson.databind}</version>
+                <version>${version.jackson}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -1841,7 +1850,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${version.jackson.dataformat}</version>
+                <version>${version.jackson}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
