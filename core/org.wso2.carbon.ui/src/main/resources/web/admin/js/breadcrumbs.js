@@ -1,3 +1,5 @@
+<script type="text/javascript" src="../resources/js/purify.js"></script>
+
 //todo - this is a hack, should be assinged at runtime
 var solutionPrefix = 'ds';
 
@@ -35,7 +37,9 @@ function generateBreadcrumbs(div, currentPosition) {
                     if (info[0] == 'xslt') {
                         back = "?back=true";
                     }
-                    text += "<a href=" + url + back + " onClick=\"javascript:deleteAdditionalEntries(" + i + ");\">" + info[1] + "</a>&#160;&gt;&#160;";
+                    sanitizedURL = DOMPurify.sanitize(url);
+                    sanitizedInfo = DOMPurify.sanitize(info[1]);
+                    text += "<a href=" + sanitizedURL + back + " onClick=\"javascript:deleteAdditionalEntries(" + i + ");\">" + sanitizedInfo + "</a>&#160;&gt;&#160;";
                 }
             }
         }
