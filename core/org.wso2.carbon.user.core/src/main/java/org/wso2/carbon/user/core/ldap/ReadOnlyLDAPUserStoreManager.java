@@ -640,9 +640,14 @@ public class ReadOnlyLDAPUserStoreManager extends AbstractUserStoreManager {
                     } catch (NamingException e) {
                         log.debug("Error while getting DN of search base", e);
                     }
-                    if (propertyNames == null) {
+                }
+                if (propertyNames == null || propertyNames.length == 0) {
+                    if (log.isDebugEnabled()) {
                         log.debug("No attributes requested");
-                    } else {
+                    }
+                    return values;
+                } else {
+                    if (log.isDebugEnabled()) {
                         for (String attribute : propertyNames) {
                             log.debug("Requesting attribute :" + attribute);
                         }
