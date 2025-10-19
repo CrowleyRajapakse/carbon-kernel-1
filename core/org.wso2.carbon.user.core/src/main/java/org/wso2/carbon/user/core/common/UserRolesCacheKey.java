@@ -51,10 +51,10 @@ public class UserRolesCacheKey implements Serializable {
     public boolean checkKeyAttributesEqual(String serverId, int tenantId, String userName) {
 
         if (this.serverId != null) {
-            return ((this.tenantId == tenantId) && (this.userName.equalsIgnoreCase(userName)) &&
+            return ((this.tenantId == tenantId) && (this.userName.equals(userName)) &&
                     (this.serverId.equalsIgnoreCase(serverId)));
         } else {
-            return ((this.tenantId == tenantId) && (this.userName.equalsIgnoreCase(userName)));
+            return ((this.tenantId == tenantId) && (this.userName.equals(userName)));
         }
     }
 
@@ -62,10 +62,10 @@ public class UserRolesCacheKey implements Serializable {
 
         if (this.serverId != null) {
             return ((this.tenantId == MultitenantConstants.SUPER_TENANT_ID ? 0 : tenantId)
-                    + this.userName.toLowerCase().hashCode() * 7) + this.serverId.hashCode() * 11;
+                    + this.userName.hashCode() * 7) + this.serverId.hashCode() * 11;
         } else {
             return ((this.tenantId == MultitenantConstants.SUPER_TENANT_ID ? 0 : tenantId)
-                    + this.userName.toLowerCase().hashCode() * 7);
+                    + this.userName.hashCode() * 7);
         }
     }
 
