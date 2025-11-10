@@ -43,6 +43,8 @@ public class TenantConstants {
     public static final String UPDATE_TENANT_SQL = "UPDATE UM_TENANT SET UM_DOMAIN_NAME=?, UM_EMAIL=?," +
             " UM_CREATED_DATE=? WHERE UM_ID=?";
     public static final String GET_TENANT_SQL = "SELECT * FROM UM_TENANT WHERE UM_ID=?";
+    public static final String GET_TENANT_ID_AND_DOMAIN_SQL = "SELECT UM_ID, UM_DOMAIN_NAME FROM UM_TENANT WHERE " +
+            "UM_DOMAIN_NAME=?";
     public static final String GET_TENANT_BY_UUID_SQL = "SELECT UM_ID, UM_DOMAIN_NAME, UM_EMAIL, " +
             "UM_CREATED_DATE, UM_ACTIVE, UM_CREATED_DATE, UM_USER_CONFIG, UM_TENANT_UUID FROM UM_TENANT WHERE " +
             "UM_TENANT_UUID=?";

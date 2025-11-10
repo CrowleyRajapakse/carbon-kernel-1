@@ -693,7 +693,7 @@ public class JDBCTenantManager implements TenantManager {
 
     public int getTenantId(String tenantDomain) throws UserStoreException {
         if (tenantDomain != null) {
-            tenantDomain = tenantDomain.toLowerCase();
+            tenantDomain = tenantDomain.toLowerCase().trim();
         }
 
         if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
@@ -711,9 +711,10 @@ public class JDBCTenantManager implements TenantManager {
         PreparedStatement prepStmt = null;
         ResultSet result = null;
         int tenantId = MultitenantConstants.INVALID_TENANT_ID;
+        String tenantDomainFromDB = null;
         try {
             dbConnection = getDBConnection();
-            String sqlStmt = TenantConstants.GET_TENANT_ID_SQL;
+            String sqlStmt = TenantConstants.GET_TENANT_ID_AND_DOMAIN_SQL;
             prepStmt = dbConnection.prepareStatement(sqlStmt);
             prepStmt.setString(1, tenantDomain);
 
@@ -721,18 +722,27 @@ public class JDBCTenantManager implements TenantManager {
 
             if (result.next()) {
                 tenantId = result.getInt(COLUMN_NAME_UM_ID);
+                tenantDomainFromDB = result.getString(COLUMN_NAME_UM_DOMAIN_NAME);
             }
             dbConnection.commit();
-            if (tenantDomain != null && !tenantDomain.isEmpty() &&
-                    tenantId != MultitenantConstants.INVALID_TENANT_ID) {
-
-                if (log.isDebugEnabled()) {
-                    log.debug("Obtained tenant ID: " + tenantId + " from database for the given tenantDomain: {"
-                            + tenantDomain + "}, hence adding tenant domain and tenant ID to cache.");
+            if (StringUtils.isNotEmpty(tenantDomainFromDB) && MultitenantConstants.INVALID_TENANT_ID != tenantId) {
+                // In mysql, certain characters are treated as similar characters. ex : ç is similar to c. So we
+                // need to check the user input tenant domain and the stored tenant domain prior to store the
+                // stored tenant domain to the cache because the cache will be populated from unwanted
+                // tenant details.
+                if (tenantDomainFromDB.equals(tenantDomain)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Obtained tenant ID: " + tenantId + " from database for the given tenantDomain: "
+                                + tenantDomain + ", hence adding tenant domain and tenant ID to cache.");
+                    }
+                    tenantDomainNameValidation(tenantDomain);
+                    tenantIdCache.addToCache(new TenantDomainKey(tenantDomainFromDB), new TenantIdEntry(tenantId));
+                    tenantDomainCache.addToCache(new TenantIdKey(tenantId), new TenantDomainEntry(tenantDomainFromDB));
+                } else {
+                    String errorMsg = "Provided tenantDomain: " + tenantDomain + " is invalid.";
+                    log.error(errorMsg);
+                    throw new UserStoreException(errorMsg);
                 }
-                tenantDomainNameValidation(tenantDomain);
-                tenantIdCache.addToCache(tenantDomainKey, new TenantIdEntry(tenantId));
-                tenantDomainCache.addToCache(new TenantIdKey(tenantId), new TenantDomainEntry(tenantDomain));
             }
         } catch (SQLException e) {
             DatabaseUtil.rollBack(dbConnection);
