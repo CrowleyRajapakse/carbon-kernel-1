@@ -18,8 +18,10 @@
 
 package org.wso2.carbon.ui.filters;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.base.ServerConfiguration;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -31,8 +33,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -40,76 +40,191 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * This filter restricts URIs to be invoked with certain HTTP Methods.
- *
- * URIs and restricted methods can be configured via init-params for the filter.
- * If a service URI is restricted access with the HTTP Method in the received request,
- * this filter will return a 405 error response.
+ * This filter handle the admin service GET request filtering.
  */
 public class URIMethodBlockFilter implements Filter {
+
     private static Log log = LogFactory.getLog(URIMethodBlockFilter.class);
-    private Map<Pattern, Set<String>> blockedURIsAndMethods = new HashMap<>();
+
+    private static final Pattern TENANT_PREFIX_PATTERN = Pattern.compile("^/{1,}t/{1,}[^/]+");
+    private static final Pattern MULTI_SLASH = Pattern.compile("^/{2,}");
+    private static final String ADMIN_SERVICE_PATH_PREFIX = "/services/";
+    private static final String HTTP_METHOD_GET = "GET";
+    private static final String WSDL_QUERY_PARAM = "wsdl";
+    private static final String WSDL2_QUERY_PARAM = "wsdl2";
+
+    private static final String ALLOW_ALL_ADMIN_SERVICE_GET_REQUESTS =
+            "Security.AdminServiceGetRequestFilter.AllowAllAdminServices";
+    private static final String ALLOWED_ADMIN_SERVICE_GET_URIS =
+            "Security.AdminServiceGetRequestFilter.AllowedGetURIs.URI";
+
+    private boolean allowAllAdminServiceGetRequests;
+    private Set<String> allowedAdminServiceGetURIs = new HashSet<>();
+    private boolean allowedGetURIsAvailable;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        Enumeration<String> paramNames = filterConfig.getInitParameterNames();
 
-        while (paramNames.hasMoreElements()) {
-            String uri = paramNames.nextElement();
-            String methods = filterConfig.getInitParameter(uri);
+        ServerConfiguration serverConfiguration = ServerConfiguration.getInstance();
+        allowAllAdminServiceGetRequests = Boolean.parseBoolean(
+                serverConfiguration.getFirstProperty(ALLOW_ALL_ADMIN_SERVICE_GET_REQUESTS));
 
-            Set<String> methodSet = Arrays.stream(methods.split(",")).map(String::trim).map(String::toUpperCase)
+        if (allowAllAdminServiceGetRequests) {
+            if (log.isDebugEnabled()) {
+                log.debug("All admin service GET requests are allowed as per the server configuration.");
+            }
+            return;
+        }
+
+        String[] allowedListConfig = serverConfiguration.getProperties(ALLOWED_ADMIN_SERVICE_GET_URIS);
+        if (allowedListConfig != null && allowedListConfig.length != 0) {
+            Set<String> configured = Arrays.stream(allowedListConfig)
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
                     .collect(Collectors.toSet());
-
-            String uriRegex = uri.replace("*", ".*");
-            Pattern uriPattern = Pattern.compile(uriRegex);
-
-            blockedURIsAndMethods.put(uriPattern, methodSet);
+            // Expand configured base URIs to include SOAP11/12 endpoint variants, normalize entries, and dedupe.
+            allowedAdminServiceGetURIs = expandSoapEndpointVariants(configured);
+            if (log.isDebugEnabled()) {
+                log.debug("Allowed admin service GET URIs (expanded): " + allowedAdminServiceGetURIs);
+            }
+        }
+        if (!allowedAdminServiceGetURIs.isEmpty()) {
+            allowedGetURIsAvailable = true;
         }
     }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-        HttpServletRequest httpReq = (HttpServletRequest) servletRequest;
-        HttpServletResponse httpResp = (HttpServletResponse) servletResponse;
 
-        String method = httpReq.getMethod().toUpperCase();
-        String requestURI = httpReq.getRequestURI();
-
-        Set<String> restrictedMethodsForRequestedURI = getRestrictedMethodsForURI(requestURI);
-        if (!restrictedMethodsForRequestedURI.isEmpty() && restrictedMethodsForRequestedURI.contains(method)) {
-            if (log.isDebugEnabled()) {
-                log.debug(method + " Request to " + requestURI + " was blocked as the method is not allowed");
-            }
-            httpResp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, method + " method is not allowed for " +
-                    "this operation");
-            return; // Don't continue the chain
+        if (!(servletRequest instanceof HttpServletRequest)) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
         }
 
-        filterChain.doFilter(servletRequest, servletResponse);
+        if (allowAllAdminServiceGetRequests) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
+
+        HttpServletRequest httpReq = (HttpServletRequest) servletRequest;
+        String method = httpReq.getMethod().toUpperCase();
+        if (!HTTP_METHOD_GET.equals(method)) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
+
+        String requestURI = httpReq.getRequestURI();
+        String normalizedURI = getNormalizedURI(requestURI);
+
+        if (!normalizedURI.startsWith(ADMIN_SERVICE_PATH_PREFIX)) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
+
+        Map<String, String[]> parameterMap = httpReq.getParameterMap();
+        if (parameterMap.size() == 1 &&
+                (parameterMap.containsKey(WSDL_QUERY_PARAM) || parameterMap.containsKey(WSDL2_QUERY_PARAM))) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
+
+        if (isAllowedURI(normalizedURI)) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
+
+        HttpServletResponse httpResp = (HttpServletResponse) servletResponse;
+        log.warn("Blocked GET request to admin service endpoint: " + requestURI);
+        httpResp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed for " +
+                "this operation");
+    }
+
+    /**
+     * Removes the tenant prefix (e.g., /t/mytenant.com) from a URI string.
+     *
+     * @param requestURI The full request URI.
+     * @return Normalized URI for checking against the allowed list.
+     */
+    private String getNormalizedURI(String requestURI) {
+
+        String noTenantPath = TENANT_PREFIX_PATTERN.matcher(requestURI).replaceFirst(StringUtils.EMPTY);
+        return MULTI_SLASH.matcher(noTenantPath).replaceFirst("/");
+    }
+
+    /**
+     * Expand configured base admin-service URIs into SOAP 1.1/1.2 endpoint variants.
+     * If the configured URI already targets a SOAP endpoint variant (contains a dot
+     * in the service segment), it's kept as-is. Tenanted prefixes are removed.
+     *
+     * Examples (input -> outputs included in the set):
+     *  - /services/Foo/op ->
+     *      /services/Foo/op,
+     *      /services/Foo.FooHttpsSoap11Endpoint/op,
+     *      /services/Foo.FooHttpSoap11Endpoint/op,
+     *      /services/Foo.FooHttpsSoap12Endpoint/op
+     *      /services/Foo.FooHttpSoap12Endpoint/op
+     *      /services/Foo.FooHttpsEndpoint/op
+     *      /services/Foo.FooHttpEndpoint/op
+     *  - /services/Foo.FooHttpsSoap11Endpoint/op -> kept as it is
+     */
+    private Set<String> expandSoapEndpointVariants(Set<String> configuredUris) {
+
+        Set<String> expanded = new HashSet<>();
+        for (String raw : configuredUris) {
+            String normalized = getNormalizedURI(raw);
+            if (!normalized.startsWith(ADMIN_SERVICE_PATH_PREFIX)) {
+                expanded.add(normalized);
+                continue;
+            }
+            String remainder = normalized.substring(ADMIN_SERVICE_PATH_PREFIX.length());
+            int slashIdx = remainder.indexOf('/');
+            if (slashIdx <= 0) {
+                // No operation segment; keep as it is.
+                expanded.add(normalized);
+                continue;
+            }
+            String service = remainder.substring(0, slashIdx);
+            String opPath = remainder.substring(slashIdx); // includes '/'.
+            if (service.contains(".")) {
+                // Already an endpoint-specific variant.
+                expanded.add(normalized);
+                continue;
+            }
+            // Base service: add itself and endpoint variants.
+            expanded.add(normalized);
+            String soap11 = ADMIN_SERVICE_PATH_PREFIX + service + "." + service + "HttpsSoap11Endpoint" + opPath;
+            String soap11Http = ADMIN_SERVICE_PATH_PREFIX + service + "." + service + "HttpSoap11Endpoint" + opPath;
+            String soap12 = ADMIN_SERVICE_PATH_PREFIX + service + "." + service + "HttpsSoap12Endpoint" + opPath;
+            String soap12Http = ADMIN_SERVICE_PATH_PREFIX + service + "." + service + "HttpSoap12Endpoint" + opPath;
+            String http = ADMIN_SERVICE_PATH_PREFIX + service + "." + service + "HttpEndpoint" + opPath;
+            String https = ADMIN_SERVICE_PATH_PREFIX + service + "." + service + "HttpsEndpoint" + opPath;
+            expanded.add(soap11);
+            expanded.add(soap11Http);
+            expanded.add(soap12);
+            expanded.add(soap12Http);
+            expanded.add(http);
+            expanded.add(https);
+        }
+        return expanded;
+    }
+
+    /**
+     * Checks if the normalizedURI matches any of the allowed URIs.
+     *
+     * @param normalizedURI The tenant-normalized URI from the request.
+     * @return true if the URI is on the allowed list, false otherwise.
+     */
+    private boolean isAllowedURI(String normalizedURI) {
+
+        if (!allowedGetURIsAvailable) {
+            return false;
+        }
+        return allowedAdminServiceGetURIs.contains(normalizedURI);
     }
 
     @Override
     public void destroy() {
-    }
 
-    /**
-     * This method will check whether the requestedURI matches any of the URIs configured,
-     * if a match is found this will return the set of restricted http methods for that URI
-     *
-     * @param requestedURI  requested URI
-     * @return    Set of restricted HTTP methods, if no match is found this will return an empty set.
-     */
-    private Set<String> getRestrictedMethodsForURI(String requestedURI) {
-        Set<String> methods = new HashSet<>();
-        for (Map.Entry<Pattern, Set<String>> entry : blockedURIsAndMethods.entrySet()) {
-            Pattern uriPattern = entry.getKey();
-            if (uriPattern.matcher(requestedURI).matches()) {
-                methods = entry.getValue();
-            }
-        }
-        return methods;
     }
-
 }
